@@ -1,0 +1,14 @@
+#chat.md
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Terraform variable files (DO NOT COMMIT)
+terraform.tfvars
+*.auto.tfvars
+
+# Sensitive files
+*.pem
+*.key
