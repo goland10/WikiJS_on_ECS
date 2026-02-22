@@ -25,7 +25,7 @@ module "vpc" {
     #"10.0.13.0/24",
   ]
 
-  create_igw         = false
+  create_igw         = true
   enable_nat_gateway = false
   #single_nat_gateway = true
 
@@ -60,10 +60,10 @@ module "vpc" {
 #    Name = "wikijs-nat-gw"
 #  }
 #
-#  # Internet Gateway tag
-#  igw_tags = {
-#    Name = "wikijs-igw"
-#  }
+  # Internet Gateway tag
+  igw_tags = {
+    Name = "wikijs-igw"
+  }
 
   # General VPC tags
   tags = {
