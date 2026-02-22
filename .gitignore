@@ -5,6 +5,10 @@
 *.tfstate.*
 .terraform.lock.hcl
 
+# Ignore plan files
+*.tfplan
+*tfplan*
+
 # Terraform variable files (DO NOT COMMIT)
 terraform.tfvars
 *.auto.tfvars
