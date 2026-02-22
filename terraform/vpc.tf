@@ -8,26 +8,26 @@ module "vpc" {
   azs = [
     "eu-west-1a",
     "eu-west-1b",
-    "eu-west-1c",
+    #"eu-west-1c",
   ]
 
   # Public subnets
   public_subnets = [
     "10.0.1.0/24",
     "10.0.2.0/24",
-    "10.0.3.0/24",
+    #"10.0.3.0/24",
   ]
 
   # Private subnets
   private_subnets = [
     "10.0.11.0/24",
     "10.0.12.0/24",
-    "10.0.13.0/24",
+    #"10.0.13.0/24",
   ]
 
-  create_igw         = true
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  create_igw         = false
+  enable_nat_gateway = false
+  #single_nat_gateway = true
 
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -55,15 +55,15 @@ module "vpc" {
     Name = "wikijs-default-rt"
   }
 
-  # NAT Gateway tag
-  nat_gateway_tags = {
-    Name = "wikijs-nat-gw"
-  }
-
-  # Internet Gateway tag
-  igw_tags = {
-    Name = "wikijs-igw"
-  }
+#  # NAT Gateway tag
+#  nat_gateway_tags = {
+#    Name = "wikijs-nat-gw"
+#  }
+#
+#  # Internet Gateway tag
+#  igw_tags = {
+#    Name = "wikijs-igw"
+#  }
 
   # General VPC tags
   tags = {

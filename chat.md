@@ -1,375 +1,207 @@
-Below is a complete reference solution using AWS + Terraform to deploy a highly available, secure, and scalable Wiki.js platform for enterprise internal knowledge management.
+Architecture Overview (AWS)
 
-1. Cloud Choice and Core Architecture
+Users access Wiki.js over HTTPS through an Application Load Balancer. Traffic flows into private subnets where multiple Wiki.js containers run on Amazon ECS Fargate. The application connects to Amazon RDS for PostgreSQL for structured data and Amazon S3 for file uploads and assets. Secrets are stored in AWS Secrets Manager. Observability is handled through CloudWatch (logs, metrics, alarms). DNS and TLS are managed with Route53 and ACM.
 
-I’m choosing AWS because it provides mature managed services for containers, databases, networking, and observability.
+Main AWS components:
 
-Wiki.js will run as containers on Amazon Elastic Container Service (ECS Fargate) behind an Application Load Balancer.
-The database will be Amazon Relational Database Service (RDS PostgreSQL).
-Static uploads will be stored in Amazon Simple Storage Service (S3).
-DNS and TLS will use **Amazon Route 53 and AWS Certificate Manager.
+VPC with 2–3 Availability Zones
 
-The deployment will be fully provisioned using Terraform.
+Public subnets (ALB)
 
-2. High-Level Architecture
+Private subnets (ECS + RDS)
 
-Architecture components:
+Amazon ECS (Fargate)
 
-VPC across 2–3 Availability Zones
+Amazon RDS for PostgreSQL
 
-Public subnets:
+Amazon S3
+
+AWS Secrets Manager
 
 Application Load Balancer
 
-Private subnets:
+CloudWatch + Alarms
 
-ECS Fargate service (Wiki.js containers)
+Route53 + ACM
 
+High-Level Architecture Diagram
+
+Internet
+↓
+Route53 → ACM (TLS cert)
+↓
+Application Load Balancer (public subnets)
+↓
+ECS Fargate Service (private subnets, multi-AZ)
+↓
 RDS PostgreSQL (Multi-AZ)
+↓
+S3 (file storage)
 
-S3 bucket (file uploads / backups)
+Reliability
 
-CloudWatch (logs, metrics, alarms)
+ECS service with minimum 2 tasks across multiple AZs.
 
-IAM roles for least privilege
+ALB health checks.
 
-Secrets Manager for DB credentials
+RDS Multi-AZ deployment.
 
-Traffic Flow
+S3 provides durable object storage.
 
-User → Route53 DNS → ALB (HTTPS) → ECS Fargate → RDS
-Uploads → S3
-Logs → CloudWatch
+Auto Scaling based on CPU and memory.
 
-3. Compute Design
-Why ECS Fargate?
+Security
 
-Serverless containers (no EC2 management)
+Private subnets for ECS and RDS.
 
-Auto-scaling support
+Security groups: ALB → ECS → RDS only required ports.
 
-Native integration with ALB
+TLS termination at ALB using ACM certificate.
 
-Strong IAM boundary controls
+IAM task roles for S3 access.
 
-ECS Setup
+Database credentials stored in Secrets Manager.
 
-ECS cluster
+Encryption enabled: RDS (at rest), S3 (SSE), EBS.
 
-Task definition:
+Optional: WAF in front of ALB.
 
-Wiki.js Docker image (requarks/wiki:2)
+SSO integration via SAML/OIDC (e.g., Okta, Azure AD).
 
-CPU: 512–1024
+Scalability
 
-Memory: 1024–2048 MB
+ECS Service Auto Scaling (target tracking on CPU).
 
-Service:
+ALB handles concurrent users.
 
-Desired count: 2 (minimum for HA)
+RDS can scale vertically; optionally Aurora PostgreSQL for better scaling.
 
-Auto Scaling target tracking on CPU or ALB request count
+S3 scales automatically.
 
-4. Storage Design
-Database
+Observability
 
-Use RDS PostgreSQL:
+ECS logs → CloudWatch Logs.
 
-Multi-AZ enabled
+RDS enhanced monitoring.
 
-Encrypted at rest (KMS)
+CloudWatch Alarms:
 
-Storage autoscaling enabled
+High CPU
 
-Backups retained 7–30 days
+RDS connections
 
-Private subnet only (no public access)
+5xx from ALB
 
-File Storage
+Optional: AWS X-Ray tracing.
 
-Wiki.js supports S3 backend.
+Centralized log retention policies.
 
-S3 bucket:
+Compute Choice Justification
 
-Versioning enabled
+ECS Fargate was selected because:
 
-Server-side encryption (SSE-KMS)
+No server management.
 
-Block public access
+Built-in HA across AZs.
 
-Lifecycle policies (optional)
+Easy horizontal scaling.
 
-5. Networking Design
-VPC Layout
+Simpler than EKS for this workload.
 
-2 Public subnets (ALB)
-
-2 Private subnets (ECS + RDS)
-
-NAT Gateway for outbound internet from private subnets
-
-Security Groups
-
-ALB:
-
-Allow 443 from corporate CIDR or VPN
-
-Forward to ECS on port 3000
-
-ECS:
-
-Allow inbound only from ALB SG
-
-Outbound to RDS and S3
-
-RDS:
-
-Allow inbound only from ECS SG
-
-Internal Access
-
-For internal-only wiki:
-
-Restrict ALB access to:
-
-Corporate public IPs
-
-OR VPN
-
-OR AWS Client VPN
-
-OR PrivateLink
-
-6. Scalability
-
-ECS Service Auto Scaling:
-
-Target CPU 60%
-
-Scale min=2 max=10
-
-Optional: scale on ALB request count
-
-RDS:
-
-Use storage autoscaling
-
-Upgrade vertically if needed
-
-S3:
-
-Automatically scalable
-
-7. Observability
-Logging
-
-ECS logs → CloudWatch Log Groups
-
-ALB access logs → S3
-
-RDS logs → CloudWatch
-
-Monitoring
-
-CloudWatch alarms:
-
-High CPU (ECS)
-
-High DB connections
-
-ALB 5XX errors
-
-SNS topic for alerts
-
-Metrics to Monitor
-
-ECS CPU/memory
-
-ALB target response time
-
-RDS free storage
-
-RDS CPU
-
-8. Security Best Practices
-
-No public RDS.
-
-Secrets stored in AWS Secrets Manager.
-
-TLS enforced (HTTPS only).
-
-IAM task roles with least privilege.
-
-Encryption:
-
-RDS encryption enabled
-
-S3 SSE-KMS
-
-WAF (optional) attached to ALB.
-
-Use IAM authentication or SSO for Wiki.js login:
-
-SAML or OIDC integration with corporate IdP.
-
-9. Terraform Structure
-
-Suggested structure:
+Infrastructure as Code (Terraform Structure)
 
 terraform/
-  main.tf
-  variables.tf
-  outputs.tf
-  provider.tf
+main.tf
+variables.tf
+outputs.tf
+modules/
+vpc/
+ecs/
+rds/
+alb/
+s3/
+monitoring/
 
-  modules/
-    vpc/
-    ecs/
-    rds/
-    alb/
-    s3/
-    monitoring/
+Core resources:
 
-10. Example Terraform Snippets
-Provider
-provider "aws" {
-  region = var.region
-}
+aws_vpc
 
-RDS PostgreSQL
-resource "aws_db_instance" "wiki" {
-  identifier              = "wiki-db"
-  engine                  = "postgres"
-  engine_version          = "15"
-  instance_class          = "db.t3.medium"
-  allocated_storage       = 50
-  storage_encrypted       = true
-  multi_az                = true
-  username                = var.db_username
-  password                = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.wiki.name
-  vpc_security_group_ids  = [aws_security_group.rds.id]
-  skip_final_snapshot     = false
-}
+aws_subnet
 
-ECS Service
-resource "aws_ecs_service" "wiki" {
-  name            = "wiki-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.wiki.arn
-  desired_count   = 2
+aws_lb + aws_lb_listener
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.wiki.arn
-    container_name   = "wiki"
-    container_port   = 3000
-  }
+aws_ecs_cluster
 
-  network_configuration {
-    subnets         = var.private_subnets
-    security_groups = [aws_security_group.ecs.id]
-  }
-}
+aws_ecs_task_definition
 
-11. Deployment Instructions
-Prerequisites
+aws_ecs_service
 
-Terraform >= 1.5
+aws_db_instance
 
-AWS CLI configured
+aws_s3_bucket
 
-Domain registered
+aws_secretsmanager_secret
 
-Steps
+aws_cloudwatch_metric_alarm
 
-Clone repository.
+Deployment Steps
 
-Configure terraform.tfvars.
-
-Run:
+Configure AWS credentials.
 
 terraform init
+
 terraform plan
+
 terraform apply
 
+Update DNS in Route53.
 
-After deployment:
+Access Wiki.js via HTTPS domain.
 
-Point Route53 record to ALB
+Teardown
 
-Access Wiki.js via HTTPS
-
-Complete initial admin setup
-
-12. Teardown Instructions
 terraform destroy
 
+Wiki.js Configuration
 
-Important:
+Environment variables in ECS task:
 
-Ensure RDS final snapshot if needed.
+DB_TYPE=postgres
 
-Confirm S3 bucket empty (Terraform cannot delete non-empty buckets).
+DB_HOST=RDS endpoint
 
-13. Architecture Diagram (Text Representation)
-                Internet
-                   |
-             Route53 DNS
-                   |
-              HTTPS (443)
-                   |
-              Application
-              Load Balancer
-                   |
-           -------------------
-           |                 |
-        ECS Task         ECS Task
-         (AZ1)             (AZ2)
-           |                 |
-           -----------RDS------------
-                    Multi-AZ
-                       |
-                      S3
+DB_USER / DB_PASS from Secrets Manager
 
-14. Why This Meets Requirements
+DB_NAME=wiki
 
-Reliability:
+STORAGE_TYPE=s3
 
-Multi-AZ RDS
+S3_BUCKET=name
 
-Multiple ECS tasks
+S3_REGION=region
 
-ALB health checks
+Optional Enhancements
 
-Security:
+Blue/Green deployments using CodeDeploy.
 
-Private subnets
+Backup automation via AWS Backup.
 
-IAM roles
+WAF rate limiting.
 
-Encryption everywhere
+CloudFront CDN in front of ALB.
 
-Secrets Manager
+Multi-region DR strategy.
 
-Scalability:
+Why This Design Works
 
-ECS Auto Scaling
+It provides:
 
-Managed services
+High availability (multi-AZ, auto-healing)
 
-S3 infinite scale
+Secure isolation (private networking + IAM)
 
-Observability:
+Elastic scaling (ECS + ALB)
 
-CloudWatch metrics
+Full automation (Terraform)
 
-Logs centralized
-
-Alerts via SNS
-
-Automation:
-
-100% Terraform
-
-Modular reusable code
+Production-grade observability
