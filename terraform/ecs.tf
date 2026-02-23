@@ -1,16 +1,6 @@
 ########################################
-# ECS Cluster (Container Insights Disabled)
+# Task Definition
 ########################################
-resource "aws_ecs_cluster" "wikijs" {
-  name = "wikijs-cluster"
-
-  tags = {
-    Name        = "wikijs-cluster"
-    Project     = "WikiJS"
-    Environment = "Assessment"
-  }
-}
-
 resource "aws_ecs_task_definition" "wikijs" {
   family                   = "wikijs-task"
   network_mode             = "awsvpc"
@@ -48,4 +38,49 @@ resource "aws_ecs_task_definition" "wikijs" {
       }
     }
   ])
+}
+########################################
+# ECS Cluster (Container Insights Disabled)
+########################################
+resource "aws_ecs_cluster" "wikijs" {
+  name = "wikijs-cluster"
+
+  tags = {
+    Name        = "wikijs-cluster"
+    Project     = "WikiJS"
+    Environment = "Assessment"
+  }
+}
+########################################
+# ECS Service
+########################################
+resource "aws_ecs_service" "wikijs" {
+  name            = "wikijs-service"
+  cluster         = aws_ecs_cluster.wikijs.name
+  task_definition = aws_ecs_task_definition.wikijs.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.wikijs.arn
+    container_name   = "wikijs"
+    container_port   = 3000
+  }
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  depends_on = [
+    aws_lb_listener.http
+  ]
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-service"
+  })
 }

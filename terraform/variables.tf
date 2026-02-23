@@ -1,3 +1,9 @@
+variable "region" {
+  type        = string
+  description = "Default region"
+  default = "eu-west-1"
+}
+
 variable "db_username" {
   type        = string
   description = "Database admin username"
@@ -8,5 +14,5 @@ variable "db_password" {
   type        = string
   description = "Database admin password"
   sensitive   = true
-  default = "hvr54sGO"
+  default = ""
 }

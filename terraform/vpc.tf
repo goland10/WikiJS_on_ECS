@@ -66,10 +66,20 @@ module "vpc" {
   }
 
   # General VPC tags
-  tags = {
-    Name        = "wikijs-vpc"
-    Project     = "WikiJS"
-    Environment = "Assessment"
-    ManagedBy   = "Terraform"
-  }
+  tags = merge(local.common_tags, {
+    Name        = "wikijs-vpc"    
+  })
+}
+################################################################################
+# VPC Endpoints
+################################################################################
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = module.vpc.private_route_table_ids
+  tags = merge(local.common_tags, {
+    Name        = "wikijs-s3-endpoint"    
+  })
 }
