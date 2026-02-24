@@ -41,15 +41,6 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_ecs" {
   description                  = "ALB can reach ECS tasks"
 }
 
-#resource "aws_vpc_security_group_egress_rule" "alb_egress_general" {
-#  security_group_id = aws_security_group.alb_sg.id
-#  ip_protocol       = "tcp"
-#  from_port         = 0
-#  to_port           = 0
-#  cidr_ipv4         = "0.0.0.0/0"
-#  description       = "ALB general outbound"
-#}
-
 ########################################
 # ECS Security Group
 ########################################
@@ -73,7 +64,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
   description                  = "Allow ALB to reach ECS tasks"
 }
 
-# Egress (to DB + general)
+# Egress (to DB)
 resource "aws_vpc_security_group_egress_rule" "ecs_to_db" {
   security_group_id            = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
@@ -83,6 +74,21 @@ resource "aws_vpc_security_group_egress_rule" "ecs_to_db" {
   description                  = "ECS tasks can reach RDS"
 }
 
+# Get AWS managed S3 prefix list
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.${var.region}.s3"
+}
+
+# ECS egress to S3 over HTTPS
+resource "aws_vpc_security_group_egress_rule" "ecs_to_s3" {
+  security_group_id = aws_security_group.ecs_sg.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  prefix_list_id    = data.aws_prefix_list.s3.id
+  description       = "ECS outbound to Gateway VPC Endpoint (S3)"
+}
+
 # Egress (to vpc endpoints)
 resource "aws_vpc_security_group_egress_rule" "ecs_to_vpce" {
   security_group_id = aws_security_group.ecs_sg.id
@@ -90,8 +96,30 @@ resource "aws_vpc_security_group_egress_rule" "ecs_to_vpce" {
   from_port         = 443
   to_port           = 443
   referenced_security_group_id = aws_security_group.vpce.id
-  #cidr_ipv4         = "0.0.0.0/0"
-  description       = "ECS general outbound traffic"
+  description       = "ECS outbound to Interface VPC Endpoints"
+}
+
+########################################
+# Interface VPC Endpoints Security Group
+########################################
+resource "aws_security_group" "vpce" {
+  name        = "wikijs-vpce-sg"
+  description = "Allow ECS to access VPC interface endpoints"
+  vpc_id      = module.vpc.vpc_id
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-vpce-sg"
+  })
+}
+
+# Ingress (from ecs)
+resource "aws_vpc_security_group_ingress_rule" "vpce_from_ecs" {
+  security_group_id            = aws_security_group.vpce.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  referenced_security_group_id = aws_security_group.ecs_sg.id
+  description                  = "Allow ECS tasks to access interface endpoints"
 }
 
 ########################################
@@ -115,15 +143,4 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_ecs" {
   to_port                      = 5432
   referenced_security_group_id = aws_security_group.ecs_sg.id
   description                  = "Allow ECS tasks to connect"
-}
-
-# Egress (general)
-resource "aws_vpc_security_group_egress_rule" "db_egress" {
-  security_group_id = aws_security_group.db_sg.id
-  ip_protocol       = "tcp"
-  from_port         = 0
-  to_port           = 0
-  referenced_security_group_id = aws_security_group.ecs_sg.id
-  #cidr_ipv4         = "0.0.0.0/0"
-  description       = "RDS outbound traffic"
 }

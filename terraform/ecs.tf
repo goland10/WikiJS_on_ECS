@@ -7,7 +7,7 @@ resource "aws_ecs_task_definition" "wikijs" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"   # .25 vCPU
   memory                   = "512"   # 0.5 GB
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = "arn:aws:iam::643218715566:role/WikijsTaskExecutionRole"
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
