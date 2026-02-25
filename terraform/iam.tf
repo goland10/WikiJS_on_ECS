@@ -39,13 +39,13 @@ resource "aws_iam_role_policy" "s3_read_bucket" {
         Sid      = "AllowBucketDiscovery"
         Effect   = "Allow"
         Action   = ["s3:GetBucketLocation", "s3:ListBucket"]
-        Resource = ["arn:aws:s3:::wikijs-conf"]
+        Resource = ["arn:aws:s3:::${local.bucket}"]
       },
       {
         Sid      = "AllowReadConfigObjects"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = ["arn:aws:s3:::wikijs-conf/*"]
+        Resource = ["arn:aws:s3:::${local.bucket}/*"]
       }
     ]
   })

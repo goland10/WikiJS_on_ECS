@@ -58,8 +58,8 @@ resource "aws_security_group" "ecs_sg" {
 resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
   security_group_id            = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
-  from_port                    = 3000
-  to_port                      = 3000
+  from_port                    = var.app_port
+  to_port                      = var.app_port
   referenced_security_group_id = aws_security_group.alb_sg.id
   description                  = "Allow ALB to reach ECS tasks"
 }
@@ -68,8 +68,8 @@ resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
 resource "aws_vpc_security_group_egress_rule" "ecs_to_db" {
   security_group_id            = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
-  from_port                    = 5432
-  to_port                      = 5432
+  from_port                    = var.db_port
+  to_port                      = var.db_port
   referenced_security_group_id = aws_security_group.db_sg.id
   description                  = "ECS tasks can reach RDS"
 }
@@ -139,8 +139,8 @@ resource "aws_security_group" "db_sg" {
 resource "aws_vpc_security_group_ingress_rule" "db_from_ecs" {
   security_group_id            = aws_security_group.db_sg.id
   ip_protocol                  = "tcp"
-  from_port                    = 5432
-  to_port                      = 5432
+  from_port                    = var.db_port
+  to_port                      = var.db_port
   referenced_security_group_id = aws_security_group.ecs_sg.id
   description                  = "Allow ECS tasks to connect"
 }

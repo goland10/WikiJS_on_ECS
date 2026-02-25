@@ -14,7 +14,7 @@ resource "aws_lb" "wikijs" {
 
 resource "aws_lb_target_group" "wikijs" {
   name        = "wikijs-tg"
-  port        = 3000
+  port        = var.app_port #3000
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "ip"

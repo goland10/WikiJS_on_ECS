@@ -5,8 +5,8 @@ resource "aws_ecs_task_definition" "wikijs" {
   family                   = "wikijs-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256" # .25 vCPU
-  memory                   = "512" # 0.5 GB
+  cpu                      = var.task_definition_cpu    #"256" # .25 vCPU
+  memory                   = var.task_definition_memory #"512" # 0.5 GB
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   #task_role_arn            = aws_iam_role.ecs_task_role.arn
 
@@ -25,7 +25,7 @@ resource "aws_ecs_task_definition" "wikijs" {
       ]
       environmentFiles = [
         {
-          value = "arn:aws:s3:::wikijs-conf/wikijs.env"
+          value = "arn:aws:s3:::${local.bucket}/${local.env_file}" #wikijs.env
           type  = "s3"
         }
       ]
@@ -46,8 +46,8 @@ resource "aws_ecs_task_definition" "wikijs" {
       ]
       portMappings = [
         {
-          containerPort = 3000
-          hostPort      = 3000
+          containerPort = var.app_port
+          hostPort      = var.app_port
           protocol      = "tcp"
         }
       ]
@@ -92,14 +92,14 @@ resource "aws_ecs_service" "wikijs" {
   load_balancer {
     target_group_arn = aws_lb_target_group.wikijs.arn
     container_name   = "wikijs"
-    container_port   = 3000
+    container_port   = var.app_port
   }
 
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
 
   depends_on = [
-    aws_lb_listener.http
+    aws_lb_listener.https
   ]
 
   tags = merge(local.common_tags, {
