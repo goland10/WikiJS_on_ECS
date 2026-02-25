@@ -279,78 +279,6 @@
   .badge.fargate { background: rgba(3,105,74,0.1);  color: #03694a; border: 1px solid rgba(3,105,74,0.3); }
   .badge.multiaz { background: rgba(184,58,10,0.1); color: #b83a0a; border: 1px solid rgba(184,58,10,0.3); }
   .badge.pg17    { background: rgba(184,58,10,0.1); color: #b83a0a; border: 1px solid rgba(184,58,10,0.3); }
-  .badge.tls     { background: rgba(3,85,160,0.1);  color: #0355a0; border: 1px solid rgba(3,85,160,0.3); }
-  .badge.selfsigned { background: rgba(160,20,60,0.08); color: #a01440; border: 1px solid rgba(160,20,60,0.25); }
-
-  /* ===== ROW-BASED AZ LAYOUT ===== */
-  .az-row {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-  }
-  .az-row-label {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.52rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 0 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    flex-shrink: 0;
-    margin-right: 8px;
-  }
-  .az-a-label { color: rgba(3,85,160,0.8); background: var(--az1); border: 1px dashed rgba(3,85,160,0.25); }
-  .az-b-label { color: rgba(91,33,182,0.8); background: var(--az2); border: 1px dashed rgba(91,33,182,0.22); }
-
-  .az-row-content {
-    display: flex;
-    align-items: stretch;
-    flex: 1;
-    gap: 0;
-  }
-
-  /* Each tier cell within a row */
-  .az-cell {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-  }
-
-  /* Tier label shown only on first (AZ-A) row */
-  .cell-tier-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.52rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    text-align: center;
-    padding: 2px 4px 6px;
-    white-space: nowrap;
-  }
-  .cell-tier-label.web  { color: var(--accent); }
-  .cell-tier-label.app  { color: var(--accent3); }
-  .cell-tier-label.data { color: var(--accent2); }
-
-  /* Compact RDS boxes so sync arrow fits between rows */
-  .rds-box { padding: 6px !important; }
-  .rds-comp { padding: 5px 8px !important; margin-bottom: 0 !important; }
-
-  /* Spacer that pushes sync arrow to align over the data column.
-     Matches: az-row-label(~34px) + az-cell(flex:1) + h-connector(52px) + az-cell(flex:1.4) + h-connector(52px) */
-  .sync-spacer {
-    flex-shrink: 0;
-    width: calc(34px + 52px + 52px);
-    /* The two flex cells take up the rest; we need to push past them.
-       Use the same flex ratio to align: web(1) + app(1.4) out of total 3.4 */
-    flex: 2.4;
-  }
 
   /* ===== LEGEND ===== */
   .legend {
@@ -400,119 +328,150 @@
         <div class="h-shaft"></div>
         <div class="h-head"></div>
       </div>
-      <span class="h-label">80→443</span>
+      <span class="h-label">80 / 443</span>
     </div>
 
     <!-- ② VPC -->
     <div class="vpc">
       <span class="zone-label">AWS VPC — Custom</span>
 
-      <!-- ACM: regional, above everything -->
-      <div class="component" style="margin-bottom:10px; border-color: rgba(160,20,60,0.3); background: rgba(160,20,60,0.03);">
-        <div class="icon sm">🔏</div>
-        <div class="comp-info">
-          <div class="comp-name">ACM Certificate — Regional</div>
-          <div class="comp-desc">Self-signed · wikijs.internal · RSA 2048 · 10yr</div>
-        </div>
-        <span class="badge selfsigned">RSA</span>
-      </div>
+      <div class="tiers">
 
-      <!-- PrivateLink panel: spans full width above AZ rows -->
-      <div class="privatelink-panel" style="margin-bottom:10px;">
-        <div class="privatelink-header">🔗 VPC PrivateLink — Managed Services (no NAT)</div>
-        <div class="services-grid">
-          <div class="svc-card">
-            <div class="icon ecr">📦</div>
-            <div><div class="svc-name">Amazon ECR</div><div class="svc-sub">Container images</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon s3">🪣</div>
-            <div><div class="svc-name">Amazon S3</div><div class="svc-sub">Config / assets</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon sm">🔐</div>
-            <div><div class="svc-name">Secrets Manager</div><div class="svc-sub">DB credentials</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon cw">📊</div>
-            <div><div class="svc-name">CloudWatch</div><div class="svc-sub">Logs & metrics</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tier column headers — outside AZ rows so they don't affect box sizing -->
-      <div style="display:flex; align-items:stretch; gap:0; margin-bottom:6px; padding-left: 34px;">
-        <div style="flex:1; text-align:center;">
-          <div class="cell-tier-label web">🌐 Web Tier · Public</div>
-        </div>
-        <div style="min-width:52px;"></div>
-        <div style="flex:1.4; text-align:center;">
-          <div class="cell-tier-label app">🐳 App Tier · Private</div>
-        </div>
-        <div style="min-width:52px;"></div>
-        <div style="flex:1; text-align:center;">
-          <div class="cell-tier-label data">🗄️ Data Tier · Private</div>
-        </div>
-      </div>
-
-      <!-- AZ-A ROW -->
-      <div class="az-row">
-        <div class="az-row-label az-a-label">⬡ AZ-A</div>
-        <div class="az-row-content">
-
-          <div class="az-cell">
-            <div class="az-box az-a" style="flex:1;">
+        <!-- WEB TIER -->
+        <div class="tier web">
+          <div class="tier-label">🌐 Web Tier · Public</div>
+          <div class="az-stack">
+            <div class="az-box az-a">
+              <div class="az-header">⬡ AZ-1a</div>
               <div class="component">
                 <div class="icon alb">⚖️</div>
                 <div class="comp-info">
-                  <div class="comp-name">ALB — HTTPS :443</div>
-                  <div class="comp-desc">Forward → target group</div>
+                  <div class="comp-name">ALB — Public</div>
+                  <div class="comp-desc">Internet-facing · health checks</div>
                 </div>
-                <span class="badge tls">TLS</span>
               </div>
+            </div>
+            <div class="az-box az-b">
+              <div class="az-header">⬡ AZ-1b</div>
               <div class="component">
-                <div class="icon alb">↩️</div>
+                <div class="icon alb">⚖️</div>
                 <div class="comp-info">
-                  <div class="comp-name">ALB — HTTP :80</div>
-                  <div class="comp-desc">301 redirect → HTTPS</div>
+                  <div class="comp-name">ALB — Public</div>
+                  <div class="comp-desc">Cross-AZ balancing</div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="h-connector green" style="align-self:center;">
-            <div class="h-arrow-row"><div class="h-shaft"></div><div class="h-head"></div></div>
-            <span class="h-label">target group</span>
+        <!-- → ECS -->
+        <div class="h-connector green" style="align-self:center;">
+          <div class="h-arrow-row">
+            <div class="h-shaft"></div>
+            <div class="h-head"></div>
           </div>
+          <span class="h-label">target group</span>
+        </div>
 
-          <div class="az-cell" style="flex:1.4;">
-            <div class="az-box az-a" style="flex:1;">
-              <div class="component">
-                <div class="icon ecs">🐳</div>
-                <div class="comp-info">
-                  <div class="comp-name">ECS Fargate</div>
-                  <div class="comp-desc">Wiki.js container</div>
+        <!-- APP TIER: ECS on top, PrivateLink services on bottom -->
+        <div class="tier app">
+          <div class="tier-label">🐳 App Tier · Private</div>
+          <div class="app-inner">
+
+            <!-- ECS AZ row -->
+            <div class="ecs-row">
+              <div class="az-box az-a">
+                <div class="az-header">⬡ AZ-1a</div>
+                <div class="component">
+                  <div class="icon ecs">🐳</div>
+                  <div class="comp-info">
+                    <div class="comp-name">ECS Fargate</div>
+                    <div class="comp-desc">Wiki.js container</div>
+                  </div>
+                  <span class="badge fargate">FARGATE</span>
                 </div>
-                <span class="badge fargate">FARGATE</span>
+                <div class="component">
+                  <div class="icon as">📈</div>
+                  <div class="comp-info">
+                    <div class="comp-name">Auto Scaling</div>
+                    <div class="comp-desc">CPU target tracking</div>
+                  </div>
+                </div>
               </div>
-              <div class="component">
-                <div class="icon as">📈</div>
-                <div class="comp-info">
-                  <div class="comp-name">Auto Scaling</div>
-                  <div class="comp-desc">CPU target tracking</div>
+              <div class="az-box az-b">
+                <div class="az-header">⬡ AZ-1b</div>
+                <div class="component">
+                  <div class="icon ecs">🐳</div>
+                  <div class="comp-info">
+                    <div class="comp-name">ECS Fargate</div>
+                    <div class="comp-desc">Wiki.js container</div>
+                  </div>
+                  <span class="badge fargate">FARGATE</span>
+                </div>
+                <div class="component">
+                  <div class="icon as">📈</div>
+                  <div class="comp-info">
+                    <div class="comp-name">Auto Scaling</div>
+                    <div class="comp-desc">CPU target tracking</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="h-connector orange" style="align-self:center;">
-            <div class="h-arrow-row"><div class="h-shaft"></div><div class="h-head"></div></div>
-            <span class="h-label">port 5432</span>
-          </div>
+            <!-- PrivateLink + Managed Services panel (parallel to ECS, below) -->
+            <div class="privatelink-panel">
+              <div class="privatelink-header">🔗 VPC PrivateLink — Managed Services (no NAT)</div>
+              <div class="services-grid">
+                <div class="svc-card">
+                  <div class="icon ecr">📦</div>
+                  <div>
+                    <div class="svc-name">Amazon ECR</div>
+                    <div class="svc-sub">Container images</div>
+                  </div>
+                </div>
+                <div class="svc-card">
+                  <div class="icon s3">🪣</div>
+                  <div>
+                    <div class="svc-name">Amazon S3</div>
+                    <div class="svc-sub">Config / assets</div>
+                  </div>
+                </div>
+                <div class="svc-card">
+                  <div class="icon sm">🔐</div>
+                  <div>
+                    <div class="svc-name">Secrets Manager</div>
+                    <div class="svc-sub">DB credentials</div>
+                  </div>
+                </div>
+                <div class="svc-card">
+                  <div class="icon cw">📊</div>
+                  <div>
+                    <div class="svc-name">CloudWatch</div>
+                    <div class="svc-sub">Logs & metrics</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <div class="az-cell">
-            <div class="az-box az-a rds-box">
-              <div class="component rds-comp">
+          </div><!-- /app-inner -->
+        </div><!-- /tier.app -->
+
+        <!-- → RDS -->
+        <div class="h-connector orange" style="align-self:center;">
+          <div class="h-arrow-row">
+            <div class="h-shaft"></div>
+            <div class="h-head"></div>
+          </div>
+          <span class="h-label">port 5432</span>
+        </div>
+
+        <!-- DATA TIER -->
+        <div class="tier data">
+          <div class="tier-label">🗄️ Data Tier · Private</div>
+          <div class="az-stack">
+            <div class="az-box az-a">
+              <div class="az-header">⬡ AZ-1a — Primary</div>
+              <div class="component">
                 <div class="icon rds">🗄️</div>
                 <div class="comp-info">
                   <div class="comp-name">RDS PostgreSQL 17</div>
@@ -521,91 +480,21 @@
                 <span class="badge pg17">PG17</span>
               </div>
             </div>
-          </div>
-
-        </div>
-      </div><!-- /AZ-A row -->
-
-      <!-- Sync arrow row — only visible over the data column -->
-      <div style="display:flex; align-items:center; margin:0;">
-        <!-- spacer matching: az-row-label + web cell + h-connector + app cell + h-connector -->
-        <div class="sync-spacer"></div>
-        <!-- the arrow itself -->
-        <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:2px 0; gap:1px;">
-          <div style="width:2px; height:10px; background: linear-gradient(to bottom, var(--accent2), rgba(184,58,10,0.3));"></div>
-          <div style="width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:6px solid var(--accent2); opacity:0.75;"></div>
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:0.42rem; color:var(--accent2); letter-spacing:0.06em;">sync replication</span>
-        </div>
-      </div>
-
-      <!-- AZ-B ROW -->
-      <div class="az-row">
-        <div class="az-row-label az-b-label">⬡ AZ-B</div>
-        <div class="az-row-content">
-
-          <div class="az-cell">
-            <div class="az-box az-b" style="flex:1;">
+            <div class="az-box az-b">
+              <div class="az-header">⬡ AZ-1b — Standby</div>
               <div class="component">
-                <div class="icon alb">⚖️</div>
-                <div class="comp-info">
-                  <div class="comp-name">ALB — HTTPS :443</div>
-                  <div class="comp-desc">Forward → target group</div>
-                </div>
-                <span class="badge tls">TLS</span>
-              </div>
-              <div class="component">
-                <div class="icon alb">↩️</div>
-                <div class="comp-info">
-                  <div class="comp-name">ALB — HTTP :80</div>
-                  <div class="comp-desc">301 redirect → HTTPS</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="h-connector green" style="align-self:center;">
-            <div class="h-arrow-row"><div class="h-shaft"></div><div class="h-head"></div></div>
-            <span class="h-label">target group</span>
-          </div>
-
-          <div class="az-cell" style="flex:1.4;">
-            <div class="az-box az-b" style="flex:1;">
-              <div class="component">
-                <div class="icon ecs">🐳</div>
-                <div class="comp-info">
-                  <div class="comp-name">ECS Fargate</div>
-                  <div class="comp-desc">Wiki.js container</div>
-                </div>
-                <span class="badge fargate">FARGATE</span>
-              </div>
-              <div class="component">
-                <div class="icon as">📈</div>
-                <div class="comp-info">
-                  <div class="comp-name">Auto Scaling</div>
-                  <div class="comp-desc">CPU target tracking</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="h-connector" style="min-width:52px; visibility:hidden;"></div>
-
-          <div class="az-cell">
-            <div class="az-box az-b rds-box" style="opacity:0.85;">
-              <div class="component rds-comp" style="border-style:dashed;">
                 <div class="icon rds">🗄️</div>
                 <div class="comp-info">
                   <div class="comp-name">RDS PostgreSQL 17</div>
-                  <div class="comp-desc">Standby · no direct writes</div>
+                  <div class="comp-desc">Multi-AZ standby</div>
                 </div>
                 <span class="badge multiaz">MULTI-AZ</span>
               </div>
             </div>
           </div>
-
         </div>
-      </div><!-- /AZ-B row -->
 
+      </div><!-- /tiers -->
     </div><!-- /vpc -->
 
   </div><!-- /pipeline -->
