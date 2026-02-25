@@ -13,16 +13,16 @@ resource "aws_ecs_task_definition" "wikijs" {
   container_definitions = jsonencode([
     {
       name       = "wikijs"
-      image      = "643218715566.dkr.ecr.${var.region}.amazonaws.com/wiki:2.5.312"
+      image      = "${local.account_id}.dkr.ecr.${var.region}.amazonaws.com/wiki:2.5.312"
       essential  = true
       entryPoint = ["sh", "-c", "printenv && node server"]
       secrets = [
         {
-          name      = "DB_PASS"
+          name = "DB_PASS"
           # Extract the 'password' key from the RDS-generated secret
           valueFrom = "${aws_db_instance.wiki.master_user_secret[0].secret_arn}:password::"
         }
-      ]      
+      ]
       environmentFiles = [
         {
           value = "arn:aws:s3:::wikijs-conf/wikijs.env"
@@ -31,9 +31,17 @@ resource "aws_ecs_task_definition" "wikijs" {
       ]
       environment = [
         {
-          name  = "DB_HOST"
+          name = "DB_HOST"
           # Reference the RDS instance address attribute
           value = aws_db_instance.wiki.address
+        },
+        {
+          name  = "HA_PROXY"
+          value = "true" # Tells Wiki.js it's behind a load balancer
+        },
+        {
+          name  = "WIKI_URL"
+          value = "https://${aws_lb.wikijs.dns_name}" # Vital for proper link generation
         }
       ]
       portMappings = [
@@ -42,7 +50,7 @@ resource "aws_ecs_task_definition" "wikijs" {
           hostPort      = 3000
           protocol      = "tcp"
         }
-      ]      
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -61,18 +69,18 @@ resource "aws_ecs_cluster" "wikijs" {
   name = "wikijs-cluster"
 
   tags = {
-    Name        = "wikijs-cluster"
+    Name = "wikijs-cluster"
   }
 }
 ########################################
 # ECS Service
 ########################################
 resource "aws_ecs_service" "wikijs" {
-  name                   = "wikijs-service"
-  cluster                = aws_ecs_cluster.wikijs.name
-  task_definition        = aws_ecs_task_definition.wikijs.arn
-  desired_count          = 1
-  launch_type            = "FARGATE"
+  name            = "wikijs-service"
+  cluster         = aws_ecs_cluster.wikijs.name
+  task_definition = aws_ecs_task_definition.wikijs.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
   #enable_execute_command = true
 
   network_configuration {

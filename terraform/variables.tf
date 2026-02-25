@@ -11,11 +11,11 @@ variable "db_username" {
 }
 
 variable "ecs_min_capacity" {
-type = number
-default = 1
+  type    = number
+  default = 1
 }
 
 variable "ecs_max_capacity" {
-type = number
-default = 3
+  type    = number
+  default = 3
 }
