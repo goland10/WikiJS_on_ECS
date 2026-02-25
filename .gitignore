@@ -16,3 +16,4 @@ terraform.tfvars
 # Sensitive files
 *.pem
 *.key
+infra.*
