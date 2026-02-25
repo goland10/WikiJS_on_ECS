@@ -81,6 +81,8 @@ This project demonstrates several high-level DevOps and security patterns:
 - Environment Isolation: The configuration uses variables and local values to separate "Assessment" or "Production" environments.
 
 ## Architecture
+[Diagram here](./docs/architecture.html)
+
 The architecture follows a traditional three-tier web application model:
 1. Web Tier: An internet-facing ALB in public subnets receives traffic on port 80/443 and forwards it to the application tier.
 2. Application Tier: Wiki.js runs as a Fargate task in private subnets. It pulls its image from ECR and configuration from S3.
