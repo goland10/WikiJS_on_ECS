@@ -4,7 +4,5 @@ resource "aws_cloudwatch_log_group" "wikijs" {
 
   tags = {
     Name        = "wikijs-log-group"
-    Project     = "WikiJS"
-    Environment = "Assessment"
   }
 }

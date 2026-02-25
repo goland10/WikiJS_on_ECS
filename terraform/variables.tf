@@ -10,9 +10,12 @@ variable "db_username" {
   default     = "postgres"
 }
 
-variable "db_password" {
-  type        = string
-  description = "Database admin password"
-  sensitive   = true
-  default     = "wikiJS5432"
+variable "ecs_min_capacity" {
+type = number
+default = 1
+}
+
+variable "ecs_max_capacity" {
+type = number
+default = 3
 }

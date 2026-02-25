@@ -38,7 +38,6 @@ resource "aws_db_instance" "wiki" {
   username = var.db_username
   #Manage the master password with Secrets Manager.
   manage_master_user_password = true
-  #password = var.db_password
   
   port                 = 5432
   parameter_group_name = aws_db_parameter_group.wiki.name
@@ -47,26 +46,25 @@ resource "aws_db_instance" "wiki" {
   vpc_security_group_ids = [aws_security_group.db_sg.id]
 
   publicly_accessible = false
-  multi_az            = false
+  multi_az            = true
 
   storage_encrypted = true
 
-  backup_retention_period   = 0
-  skip_final_snapshot       = true
-  final_snapshot_identifier = "my-final-db-snapshot-12345"
+  backup_retention_period   = 7
+  delete_automated_backups = false
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "wikijs-final-snapshot-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   deletion_protection       = false
 
   auto_minor_version_upgrade = true
   apply_immediately          = true
 
-  performance_insights_enabled = false
-  monitoring_interval          = 0
+  performance_insights_enabled = true
+  performance_insights_retention_period = 7
+  monitoring_interval          = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
 
   tags = merge(local.common_tags, {
     Name = "wikijs-db"
   })
-}
-
-output "db_address" {
-  value = aws_db_instance.wiki.address
 }

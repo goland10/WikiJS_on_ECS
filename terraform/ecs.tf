@@ -7,7 +7,7 @@ resource "aws_ecs_task_definition" "wikijs" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256" # .25 vCPU
   memory                   = "512" # 0.5 GB
-  execution_role_arn       = "arn:aws:iam::643218715566:role/wikijs-ecs-task-execution-role"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   #task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
@@ -97,4 +97,37 @@ resource "aws_ecs_service" "wikijs" {
   tags = merge(local.common_tags, {
     Name = "wikijs-service"
   })
+}
+############################
+# Autoscaling Target
+############################
+
+resource "aws_appautoscaling_target" "ecs" {
+  max_capacity       = var.ecs_max_capacity
+  min_capacity       = var.ecs_min_capacity
+  resource_id        = "service/${aws_ecs_cluster.wikijs.name}/${aws_ecs_service.wikijs.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+############################
+# CPU Target Tracking (70%)
+############################
+
+resource "aws_appautoscaling_policy" "ecs_cpu" {
+  name               = "ecs-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 70.0
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+  }
 }

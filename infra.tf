@@ -50,8 +50,6 @@ resource "aws_lb_listener" "http" {
 
   tags = {
     Name        = "wikijs-log-group"
-    Project     = "WikiJS"
-    Environment = "Assessment"
   }
 }########################################
 # Task Definition
@@ -62,7 +60,7 @@ resource "aws_ecs_task_definition" "wikijs" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256" # .25 vCPU
   memory                   = "512" # 0.5 GB
-  execution_role_arn       = "arn:aws:iam::643218715566:role/wikijs-ecs-task-execution-role"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   #task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
@@ -152,6 +150,39 @@ resource "aws_ecs_service" "wikijs" {
   tags = merge(local.common_tags, {
     Name = "wikijs-service"
   })
+}
+############################
+# Autoscaling Target
+############################
+
+resource "aws_appautoscaling_target" "ecs" {
+  max_capacity       = var.ecs_max_capacity
+  min_capacity       = var.ecs_min_capacity
+  resource_id        = "service/${aws_ecs_cluster.wikijs.name}/${aws_ecs_service.wikijs.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+############################
+# CPU Target Tracking (70%)
+############################
+
+resource "aws_appautoscaling_policy" "ecs_cpu" {
+  name               = "ecs-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 70.0
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+  }
 }########################################
 # IAM Role - Task Execution Role
 ########################################
@@ -218,13 +249,117 @@ resource "aws_iam_role_policy" "ecs_rds_secret_access" {
     }]
   })
 }
-locals {
+###################################
+# RDS Enhanced Monitoring IAM Role
+###################################
+
+resource "aws_iam_role" "rds_monitoring" {
+  name = "rds-enhanced-monitoring-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring_attach" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}locals {
   common_tags = {
     Project     = "WikiJS"
     Environment = "Assessment"
     ManagedBy   = "Terraform"
   }
-}terraform {
+}##########################
+# ALB Outputs
+##########################
+output "alb_dns_name" {
+  value = aws_lb.wikijs.dns_name
+}
+
+output "alb_region" {
+  value = aws_lb.wikijs.region
+}
+##########################
+# Database Outputs
+##########################
+output "db_endpoint" {
+  value = aws_db_instance.wiki.endpoint
+}
+
+output "db_availability_zone" {
+  value = aws_db_instance.wiki.availability_zone
+}
+
+################################
+# ECS Cluster & Service Outputs
+################################
+output "ecs_cluster_name" {
+  value = aws_ecs_cluster.wikijs.name
+}
+
+output "ecs_service_name" {
+  value = aws_ecs_service.wikijs.name
+}
+
+output "ecs_service_desired_count" {
+  value = aws_ecs_service.wikijs.desired_count
+}
+##########################
+# Autoscaling Outputs
+##########################
+output "ecs_autoscaling_min_capacity" {
+  value = aws_appautoscaling_target.ecs.min_capacity
+}
+
+output "ecs_autoscaling_max_capacity" {
+  value = aws_appautoscaling_target.ecs.max_capacity
+}
+
+output "ecs_autoscaling_resource_id" {
+  value = aws_appautoscaling_target.ecs.resource_id
+}
+
+output "ecs_cpu_scaling_policy_name" {
+  value = aws_appautoscaling_policy.ecs_cpu.name
+}
+
+output "ecs_cpu_scaling_target_value" {
+  value = aws_appautoscaling_policy.ecs_cpu.target_tracking_scaling_policy_configuration[0].target_value
+}
+
+##########################
+# VPC Endpoint Outputs
+##########################
+output "vpce_s3_state" {
+  value = aws_vpc_endpoint.s3.state
+}
+
+output "vpce_ecr_api_state" {
+  value = aws_vpc_endpoint.ecr_api.state
+}
+
+output "vpce_ecr_dkr_state" {
+  value = aws_vpc_endpoint.ecr_dkr.state
+}
+
+output "vpce_logs_state" {
+  value = aws_vpc_endpoint.logs.state
+}
+
+output "vpce_secretsmanager_state" {
+  value = aws_vpc_endpoint.secretsmanager.state
+}
+terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -284,7 +419,6 @@ resource "aws_db_instance" "wiki" {
   username = var.db_username
   #Manage the master password with Secrets Manager.
   manage_master_user_password = true
-  #password = var.db_password
   
   port                 = 5432
   parameter_group_name = aws_db_parameter_group.wiki.name
@@ -293,29 +427,29 @@ resource "aws_db_instance" "wiki" {
   vpc_security_group_ids = [aws_security_group.db_sg.id]
 
   publicly_accessible = false
-  multi_az            = false
+  multi_az            = true
 
   storage_encrypted = true
 
-  backup_retention_period   = 0
-  skip_final_snapshot       = true
-  final_snapshot_identifier = "my-final-db-snapshot-12345"
-  deletion_protection       = false
+  backup_retention_period   = 7
+  delete_automated_backups = false
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "wikijs-final-snapshot-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  deletion_protection       = true
 
   auto_minor_version_upgrade = true
   apply_immediately          = true
 
-  performance_insights_enabled = false
-  monitoring_interval          = 0
+  performance_insights_enabled = true
+  performance_insights_retention_period = 7
+  monitoring_interval          = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring.arn
 
   tags = merge(local.common_tags, {
     Name = "wikijs-db"
   })
 }
-
-output "db_address" {
-  value = aws_db_instance.wiki.address
-}########################################
+########################################
 # ALB Security Group
 ########################################
 resource "aws_security_group" "alb_sg" {
@@ -473,11 +607,14 @@ variable "db_username" {
   default     = "postgres"
 }
 
-variable "db_password" {
-  type        = string
-  description = "Database admin password"
-  sensitive   = true
-  default     = "wikiJS5432"
+variable "ecs_min_capacity" {
+type = number
+default = 1
+}
+
+variable "ecs_max_capacity" {
+type = number
+default = 3
 }##########################
 # Interface VPC Endpoints 
 ##########################
