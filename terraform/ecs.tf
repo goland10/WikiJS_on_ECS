@@ -13,7 +13,7 @@ resource "aws_ecs_task_definition" "wikijs" {
   container_definitions = jsonencode([
     {
       name       = "wikijs"
-      image      = "643218715566.dkr.ecr.eu-west-1.amazonaws.com/wiki:2.5.312"
+      image      = "643218715566.dkr.ecr.${var.region}.amazonaws.com/wiki:2.5.312"
       essential  = true
       entryPoint = ["sh", "-c", "printenv && node server"]
       secrets = [
@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "wikijs" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = "/ecs/wikijs"
-          "awslogs-region"        = "eu-west-1"
+          "awslogs-region"        = var.region
           "awslogs-stream-prefix" = "wikijs"
         }
       }

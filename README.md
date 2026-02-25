@@ -93,5 +93,8 @@ Monitoring & Connectivity
 Before deploying this infrastructure, ensure you have the following:
 - Terraform CLI (version ~> 1.0 recommended; provider uses ~> 6.0).
 - AWS CLI configured with appropriate credentials.
-- An S3 Bucket named wikijs-conf containing a wikijs.env file for application runtime configuration.
-- A Wiki.js Docker image pushed to an ECR repository.
+- An S3 Bucket named wikijs-conf containing a wikijs.env file for application runtime configuration. [Instructions here](./docs/prerequisites.md)
+- A Wiki.js Docker image pushed to an ECR repository. [Instructions here](./docs/prerequisites.md)
+
+## Deployment instructions
+1. prepare env file with your custom settings 
