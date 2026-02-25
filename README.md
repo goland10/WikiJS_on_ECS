@@ -82,7 +82,6 @@ This project demonstrates several high-level DevOps and security patterns:
 
 ## Architecture
 [Diagram here](https://htmlpreview.github.io/?https://raw.githubusercontent.com/goland10/WikiJS_on_ECS/refs/heads/main/docs/architecture.html) 
-(./docs/architecture.html)
 
 The architecture follows a traditional three-tier web application model:
 1. Web Tier: An internet-facing ALB in public subnets receives traffic on port 80/443 and forwards it to the application tier.
