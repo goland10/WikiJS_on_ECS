@@ -5,29 +5,44 @@ resource "aws_ecs_task_definition" "wikijs" {
   family                   = "wikijs-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"   # .25 vCPU
-  memory                   = "512"   # 0.5 GB
-  execution_role_arn       = "arn:aws:iam::643218715566:role/WikijsTaskExecutionRole"
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  cpu                      = "256" # .25 vCPU
+  memory                   = "512" # 0.5 GB
+  execution_role_arn       = "arn:aws:iam::643218715566:role/wikijs-ecs-task-execution-role"
+  #task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "wikijs"
-      image     = "643218715566.dkr.ecr.eu-west-1.amazonaws.com/wiki:2.5.312"
-      essential = true
+      name       = "wikijs"
+      image      = "643218715566.dkr.ecr.eu-west-1.amazonaws.com/wiki:2.5.312"
+      essential  = true
+      entryPoint = ["sh", "-c", "printenv && node server"]
+      secrets = [
+        {
+          name      = "DB_PASS"
+          # Extract the 'password' key from the RDS-generated secret
+          valueFrom = "${aws_db_instance.wiki.master_user_secret[0].secret_arn}:password::"
+        }
+      ]      
+      environmentFiles = [
+        {
+          value = "arn:aws:s3:::wikijs-conf/wikijs.env"
+          type  = "s3"
+        }
+      ]
+      environment = [
+        {
+          name  = "DB_HOST"
+          # Reference the RDS instance address attribute
+          value = aws_db_instance.wiki.address
+        }
+      ]
       portMappings = [
         {
           containerPort = 3000
           hostPort      = 3000
           protocol      = "tcp"
         }
-      ]
-      environment = [
-        {
-          name  = "WIKIJS_ENV_FILE"
-          value = "s3://wikijs-conf/wikijs.env"
-        }
-      ]
+      ]      
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -47,19 +62,18 @@ resource "aws_ecs_cluster" "wikijs" {
 
   tags = {
     Name        = "wikijs-cluster"
-    Project     = "WikiJS"
-    Environment = "Assessment"
   }
 }
 ########################################
 # ECS Service
 ########################################
 resource "aws_ecs_service" "wikijs" {
-  name            = "wikijs-service"
-  cluster         = aws_ecs_cluster.wikijs.name
-  task_definition = aws_ecs_task_definition.wikijs.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                   = "wikijs-service"
+  cluster                = aws_ecs_cluster.wikijs.name
+  task_definition        = aws_ecs_task_definition.wikijs.arn
+  desired_count          = 1
+  launch_type            = "FARGATE"
+  #enable_execute_command = true
 
   network_configuration {
     subnets          = module.vpc.private_subnets

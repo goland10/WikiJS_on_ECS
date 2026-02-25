@@ -60,29 +60,44 @@ resource "aws_ecs_task_definition" "wikijs" {
   family                   = "wikijs-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"   # .25 vCPU
-  memory                   = "512"   # 0.5 GB
-  execution_role_arn       = "arn:aws:iam::643218715566:role/WikijsTaskExecutionRole"
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  cpu                      = "256" # .25 vCPU
+  memory                   = "512" # 0.5 GB
+  execution_role_arn       = "arn:aws:iam::643218715566:role/wikijs-ecs-task-execution-role"
+  #task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "wikijs"
-      image     = "643218715566.dkr.ecr.eu-west-1.amazonaws.com/wiki:2.5.312"
-      essential = true
+      name       = "wikijs"
+      image      = "643218715566.dkr.ecr.eu-west-1.amazonaws.com/wiki:2.5.312"
+      essential  = true
+      entryPoint = ["sh", "-c", "printenv && node server"]
+      secrets = [
+        {
+          name      = "DB_PASS"
+          # Extract the 'password' key from the RDS-generated secret
+          valueFrom = "${aws_db_instance.wiki.master_user_secret[0].secret_arn}:password::"
+        }
+      ]      
+      environmentFiles = [
+        {
+          value = "arn:aws:s3:::wikijs-conf/wikijs.env"
+          type  = "s3"
+        }
+      ]
+      environment = [
+        {
+          name  = "DB_HOST"
+          # Reference the RDS instance address attribute
+          value = aws_db_instance.wiki.address
+        }
+      ]
       portMappings = [
         {
           containerPort = 3000
           hostPort      = 3000
           protocol      = "tcp"
         }
-      ]
-      environment = [
-        {
-          name  = "WIKIJS_ENV_FILE"
-          value = "s3://wikijs-conf/wikijs.env"
-        }
-      ]
+      ]      
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -102,19 +117,18 @@ resource "aws_ecs_cluster" "wikijs" {
 
   tags = {
     Name        = "wikijs-cluster"
-    Project     = "WikiJS"
-    Environment = "Assessment"
   }
 }
 ########################################
 # ECS Service
 ########################################
 resource "aws_ecs_service" "wikijs" {
-  name            = "wikijs-service"
-  cluster         = aws_ecs_cluster.wikijs.name
-  task_definition = aws_ecs_task_definition.wikijs.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                   = "wikijs-service"
+  cluster                = aws_ecs_cluster.wikijs.name
+  task_definition        = aws_ecs_task_definition.wikijs.arn
+  desired_count          = 1
+  launch_type            = "FARGATE"
+  #enable_execute_command = true
 
   network_configuration {
     subnets          = module.vpc.private_subnets
@@ -157,65 +171,58 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 
   tags = {
-    Name        = "wikijs-ecs-task-execution-role"
-    Project     = "WikiJS"
-    Environment = "Assessment"
+    Name = "wikijs-ecs-task-execution-role"
   }
 }
 
+# AWS managed policy for image pull and CloudWatch logs
 resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-########################################
-# ECS Task Role for S3 access
-########################################
-
-resource "aws_iam_role" "ecs_task_role" {
-  name = "wikijs-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "wikijs-ecs-task-role"
-    Project     = "WikiJS"
-    Environment = "Assessment"
-    ManagedBy   = "Terraform"
-  }
-}
-
-# Policy to allow ECS tasks to read the S3 .env file
-resource "aws_iam_role_policy" "ecs_s3_access" {
-  name = "ecs-s3-read-wikijs-env"
-  role = aws_iam_role.ecs_task_role.id
+# Inline policy to read configuration from S3
+resource "aws_iam_role_policy" "s3_read_bucket" {
+  name = "wikijsS3ReadBucket"
+  role = aws_iam_role.ecs_task_execution_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = ["s3:GetObject"],
-        Resource = "arn:aws:s3:::wikijs-conf/wikijs.env"
+        Sid    = "AllowBucketDiscovery"
+        Effect = "Allow"
+        Action = ["s3:GetBucketLocation", "s3:ListBucket"]
+        Resource = ["arn:aws:s3:::wikijs-conf"]
+      },
+      {
+        Sid    = "AllowReadConfigObjects"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = ["arn:aws:s3:::wikijs-conf/*"]
       }
     ]
   })
-}locals {
+}
+
+# Inline policy to allow ECS to fetch the password from Secret Manager created by RDS
+resource "aws_iam_role_policy" "ecs_rds_secret_access" {
+  role = aws_iam_role.ecs_task_execution_role.id
+  name = "wikijsGetSecretValue"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = [aws_db_instance.wiki.master_user_secret[0].secret_arn]
+    }]
+  })
+}
+locals {
   common_tags = {
     Project     = "WikiJS"
     Environment = "Assessment"
-    ManagedBy  = "Terraform"
+    ManagedBy   = "Terraform"
   }
 }terraform {
   required_providers {
@@ -228,8 +235,87 @@ resource "aws_iam_role_policy" "ecs_s3_access" {
 
 provider "aws" {
   region = "eu-west-1"
+
+  default_tags {
+    tags = {
+      Project     = "WikiJS"
+      Environment = "Assessment"
+      ManagedBy   = "Terraform"
+    }
+  }
+}
+resource "aws_db_subnet_group" "wiki" {
+  name       = "wikijs-db-subnet-group"
+  subnet_ids = module.vpc.private_subnets
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-db-subnet-group"
+  })
+}
+
+resource "aws_db_parameter_group" "wiki" {
+  name   = "wikijs-postgres17"
+  family = "postgres17"
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "0"
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-db-parameter-group"
+  })
 }
 ########################################
+# DB Instance
+########################################
+resource "aws_db_instance" "wiki" {
+  identifier = "wikijs-db"
+
+  engine         = "postgres"
+  engine_version = "17.6"
+  instance_class = "db.t4g.micro"
+
+  allocated_storage     = 20
+  max_allocated_storage = 100
+  storage_type          = "gp3"
+
+  db_name  = "wikijs"
+  username = var.db_username
+  #Manage the master password with Secrets Manager.
+  manage_master_user_password = true
+  #password = var.db_password
+  
+  port                 = 5432
+  parameter_group_name = aws_db_parameter_group.wiki.name
+
+  db_subnet_group_name   = aws_db_subnet_group.wiki.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+
+  publicly_accessible = false
+  multi_az            = false
+
+  storage_encrypted = true
+
+  backup_retention_period   = 0
+  skip_final_snapshot       = true
+  final_snapshot_identifier = "my-final-db-snapshot-12345"
+  deletion_protection       = false
+
+  auto_minor_version_upgrade = true
+  apply_immediately          = true
+
+  performance_insights_enabled = false
+  monitoring_interval          = 0
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-db"
+  })
+}
+
+output "db_address" {
+  value = aws_db_instance.wiki.address
+}########################################
 # ALB Security Group
 ########################################
 resource "aws_security_group" "alb_sg" {
@@ -238,7 +324,7 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = module.vpc.vpc_id
 
   tags = merge(local.common_tags, {
-    Name        = "wikijs-alb-sg"    
+    Name = "wikijs-alb-sg"
   })
 
 }
@@ -272,15 +358,6 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_ecs" {
   description                  = "ALB can reach ECS tasks"
 }
 
-#resource "aws_vpc_security_group_egress_rule" "alb_egress_general" {
-#  security_group_id = aws_security_group.alb_sg.id
-#  ip_protocol       = "tcp"
-#  from_port         = 0
-#  to_port           = 0
-#  cidr_ipv4         = "0.0.0.0/0"
-#  description       = "ALB general outbound"
-#}
-
 ########################################
 # ECS Security Group
 ########################################
@@ -290,7 +367,7 @@ resource "aws_security_group" "ecs_sg" {
   vpc_id      = module.vpc.vpc_id
 
   tags = merge(local.common_tags, {
-    Name        = "wikijs-ecs-sg"    
+    Name = "wikijs-ecs-sg"
   })
 }
 
@@ -304,7 +381,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
   description                  = "Allow ALB to reach ECS tasks"
 }
 
-# Egress (to DB + general)
+# Egress (to DB)
 resource "aws_vpc_security_group_egress_rule" "ecs_to_db" {
   security_group_id            = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
@@ -314,68 +391,32 @@ resource "aws_vpc_security_group_egress_rule" "ecs_to_db" {
   description                  = "ECS tasks can reach RDS"
 }
 
-# Egress (to vpc endpoints)
-resource "aws_vpc_security_group_egress_rule" "ecs_to_vpce" {
+# Get AWS managed S3 prefix list
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.${var.region}.s3"
+}
+
+# ECS egress to S3 over HTTPS
+resource "aws_vpc_security_group_egress_rule" "ecs_to_s3" {
   security_group_id = aws_security_group.ecs_sg.id
   ip_protocol       = "tcp"
   from_port         = 443
   to_port           = 443
-  referenced_security_group_id = aws_security_group.vpce.id
-  #cidr_ipv4         = "0.0.0.0/0"
-  description       = "ECS general outbound traffic"
+  prefix_list_id    = data.aws_prefix_list.s3.id
+  description       = "ECS outbound to Gateway VPC Endpoint (S3)"
 }
 
-########################################
-# RDS Security Group
-########################################
-resource "aws_security_group" "db_sg" {
-  name        = "wikijs-db-sg"
-  description = "RDS PostgreSQL"
-  vpc_id      = module.vpc.vpc_id
-
-  tags = merge(local.common_tags, {
-    Name        = "wikijs-db-sg"    
-  })
-}
-
-# Ingress (from ECS)
-resource "aws_vpc_security_group_ingress_rule" "db_from_ecs" {
-  security_group_id            = aws_security_group.db_sg.id
+# Egress (to vpc endpoints)
+resource "aws_vpc_security_group_egress_rule" "ecs_to_vpce" {
+  security_group_id            = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
-  from_port                    = 5432
-  to_port                      = 5432
-  referenced_security_group_id = aws_security_group.ecs_sg.id
-  description                  = "Allow ECS tasks to connect"
+  from_port                    = 443
+  to_port                      = 443
+  referenced_security_group_id = aws_security_group.vpce.id
+  description                  = "ECS outbound to Interface VPC Endpoints"
 }
 
-# Egress (general)
-resource "aws_vpc_security_group_egress_rule" "db_egress" {
-  security_group_id = aws_security_group.db_sg.id
-  ip_protocol       = "tcp"
-  from_port         = 0
-  to_port           = 0
-  referenced_security_group_id = aws_security_group.ecs_sg.id
-  #cidr_ipv4         = "0.0.0.0/0"
-  description       = "RDS outbound traffic"
-}
-variable "region" {
-  type        = string
-  description = "Default region"
-  default = "eu-west-1"
-}
-
-variable "db_username" {
-  type        = string
-  description = "Database admin username"
-  default = "postgres"
-}
-
-variable "db_password" {
-  type        = string
-  description = "Database admin password"
-  sensitive   = true
-  default = ""
-}########################################
+########################################
 # Interface VPC Endpoints Security Group
 ########################################
 resource "aws_security_group" "vpce" {
@@ -391,26 +432,53 @@ resource "aws_security_group" "vpce" {
 # Ingress (from ecs)
 resource "aws_vpc_security_group_ingress_rule" "vpce_from_ecs" {
   security_group_id            = aws_security_group.vpce.id
-  #referenced_security_group_id = aws_security_group.ecs_sg.id
   ip_protocol                  = "tcp"
   from_port                    = 443
   to_port                      = 443
-  cidr_ipv4         = "10.0.0.0/16"
+  referenced_security_group_id = aws_security_group.ecs_sg.id
   description                  = "Allow ECS tasks to access interface endpoints"
 }
 
-# Egress (to ecs)
-resource "aws_vpc_security_group_egress_rule" "vpce_egress" {
-  security_group_id = aws_security_group.vpce.id
-  ip_protocol       = "tcp"
-  from_port         = 443
-  to_port           = 443
-  #referenced_security_group_id = aws_security_group.ecs_sg.id
-  cidr_ipv4         = "10.0.0.0/16"
-  description       = "Endpoint outbound"
+########################################
+# RDS Security Group
+########################################
+resource "aws_security_group" "db_sg" {
+  name        = "wikijs-db-sg"
+  description = "Allow PostgreSQL access from ECS only"
+  vpc_id      = module.vpc.vpc_id
+
+  tags = merge(local.common_tags, {
+    Name = "wikijs-db-sg"
+  })
 }
 
-##########################
+# Ingress (from ECS)
+resource "aws_vpc_security_group_ingress_rule" "db_from_ecs" {
+  security_group_id            = aws_security_group.db_sg.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  referenced_security_group_id = aws_security_group.ecs_sg.id
+  description                  = "Allow ECS tasks to connect"
+}
+variable "region" {
+  type        = string
+  description = "Default region"
+  default     = "eu-west-1"
+}
+
+variable "db_username" {
+  type        = string
+  description = "Database admin username"
+  default     = "postgres"
+}
+
+variable "db_password" {
+  type        = string
+  description = "Database admin password"
+  sensitive   = true
+  default     = "wikiJS5432"
+}##########################
 # Interface VPC Endpoints 
 ##########################
 resource "aws_vpc_endpoint" "ecr_api" {
@@ -452,6 +520,17 @@ resource "aws_vpc_endpoint" "logs" {
   })
 }
 
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [aws_security_group.vpce.id]
+  private_dns_enabled = true
+
+  tags = { Name = "wikijs-secretsmanager-endpoint" }
+}
+
 #########################
 # Gateway VPC Endpoint
 #########################
@@ -462,7 +541,7 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = module.vpc.private_route_table_ids
   tags = merge(local.common_tags, {
-    Name        = "wikijs-s3-endpoint"    
+    Name = "wikijs-s3-endpoint"
   })
 }
 module "vpc" {
@@ -522,11 +601,11 @@ module "vpc" {
     Name = "wikijs-default-rt"
   }
 
-#  # NAT Gateway tag
-#  nat_gateway_tags = {
-#    Name = "wikijs-nat-gw"
-#  }
-#
+  #  # NAT Gateway tag
+  #  nat_gateway_tags = {
+  #    Name = "wikijs-nat-gw"
+  #  }
+  #
   # Internet Gateway tag
   igw_tags = {
     Name = "wikijs-igw"
@@ -534,6 +613,6 @@ module "vpc" {
 
   # General VPC tags
   tags = merge(local.common_tags, {
-    Name        = "wikijs-vpc"    
+    Name = "wikijs-vpc"
   })
 }

@@ -55,11 +55,11 @@ module "vpc" {
     Name = "wikijs-default-rt"
   }
 
-#  # NAT Gateway tag
-#  nat_gateway_tags = {
-#    Name = "wikijs-nat-gw"
-#  }
-#
+  #  # NAT Gateway tag
+  #  nat_gateway_tags = {
+  #    Name = "wikijs-nat-gw"
+  #  }
+  #
   # Internet Gateway tag
   igw_tags = {
     Name = "wikijs-igw"
@@ -67,6 +67,6 @@ module "vpc" {
 
   # General VPC tags
   tags = merge(local.common_tags, {
-    Name        = "wikijs-vpc"    
+    Name = "wikijs-vpc"
   })
 }

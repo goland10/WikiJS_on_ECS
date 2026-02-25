@@ -7,7 +7,7 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = module.vpc.vpc_id
 
   tags = merge(local.common_tags, {
-    Name        = "wikijs-alb-sg"    
+    Name = "wikijs-alb-sg"
   })
 
 }
@@ -50,7 +50,7 @@ resource "aws_security_group" "ecs_sg" {
   vpc_id      = module.vpc.vpc_id
 
   tags = merge(local.common_tags, {
-    Name        = "wikijs-ecs-sg"    
+    Name = "wikijs-ecs-sg"
   })
 }
 
@@ -91,12 +91,12 @@ resource "aws_vpc_security_group_egress_rule" "ecs_to_s3" {
 
 # Egress (to vpc endpoints)
 resource "aws_vpc_security_group_egress_rule" "ecs_to_vpce" {
-  security_group_id = aws_security_group.ecs_sg.id
-  ip_protocol       = "tcp"
-  from_port         = 443
-  to_port           = 443
+  security_group_id            = aws_security_group.ecs_sg.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
   referenced_security_group_id = aws_security_group.vpce.id
-  description       = "ECS outbound to Interface VPC Endpoints"
+  description                  = "ECS outbound to Interface VPC Endpoints"
 }
 
 ########################################
@@ -127,11 +127,11 @@ resource "aws_vpc_security_group_ingress_rule" "vpce_from_ecs" {
 ########################################
 resource "aws_security_group" "db_sg" {
   name        = "wikijs-db-sg"
-  description = "RDS PostgreSQL"
+  description = "Allow PostgreSQL access from ECS only"
   vpc_id      = module.vpc.vpc_id
 
   tags = merge(local.common_tags, {
-    Name        = "wikijs-db-sg"    
+    Name = "wikijs-db-sg"
   })
 }
 

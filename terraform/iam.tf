@@ -17,58 +17,50 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 
   tags = {
-    Name        = "wikijs-ecs-task-execution-role"
-    Project     = "WikiJS"
-    Environment = "Assessment"
+    Name = "wikijs-ecs-task-execution-role"
   }
 }
 
+# AWS managed policy for image pull and CloudWatch logs
 resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-########################################
-# ECS Task Role for S3 access
-########################################
+# Inline policy to read configuration from S3
+resource "aws_iam_role_policy" "s3_read_bucket" {
+  name = "wikijsS3ReadBucket"
+  role = aws_iam_role.ecs_task_execution_role.id
 
-resource "aws_iam_role" "ecs_task_role" {
-  name = "wikijs-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
+  policy = jsonencode({
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
+        Sid    = "AllowBucketDiscovery"
+        Effect = "Allow"
+        Action = ["s3:GetBucketLocation", "s3:ListBucket"]
+        Resource = ["arn:aws:s3:::wikijs-conf"]
+      },
+      {
+        Sid    = "AllowReadConfigObjects"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = ["arn:aws:s3:::wikijs-conf/*"]
       }
     ]
   })
-
-  tags = {
-    Name        = "wikijs-ecs-task-role"
-    Project     = "WikiJS"
-    Environment = "Assessment"
-    ManagedBy   = "Terraform"
-  }
 }
 
-# Policy to allow ECS tasks to read the S3 .env file
-resource "aws_iam_role_policy" "ecs_s3_access" {
-  name = "ecs-s3-read-wikijs-env"
-  role = aws_iam_role.ecs_task_role.id
-
+# Inline policy to allow ECS to fetch the password from Secret Manager created by RDS
+resource "aws_iam_role_policy" "ecs_rds_secret_access" {
+  role = aws_iam_role.ecs_task_execution_role.id
+  name = "wikijsGetSecretValue"
   policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect   = "Allow",
-        Action   = ["s3:GetObject"],
-        Resource = "arn:aws:s3:::wikijs-conf/wikijs.env"
-      }
-    ]
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = [aws_db_instance.wiki.master_user_secret[0].secret_arn]
+    }]
   })
 }
