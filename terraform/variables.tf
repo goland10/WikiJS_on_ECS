@@ -61,7 +61,7 @@ variable "app_name" {
 ########################################
 # Database Variables
 ########################################
-variable "db_username" {
+variable "db_user" {
   type        = string
   description = "Database admin username."
   default     = "postgres"

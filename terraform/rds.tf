@@ -35,7 +35,7 @@ resource "aws_db_instance" "wiki" {
   storage_type          = "gp3"
 
   db_name  = var.app_name #"wikijs"
-  username = var.db_username
+  username = var.db_user
   #Manage the master password with Secrets Manager.
   manage_master_user_password = true
 
