@@ -107,14 +107,20 @@ The architecture follows a traditional three-tier web application model:
 3. Data Tier: A PostgreSQL instance in private subnets stores application data.
 
 Monitoring & Connectivity
+
 - CloudWatch Logs capture application and system output.
+
 - VPC Endpoints (Interface and Gateway) allow the private ECS tasks to communicate with S3, ECR, and Secrets Manager without a NAT Gateway, **reducing costs and increasing security**.
 
 ## Prerequisites
 Before deploying this infrastructure, ensure you have the following:
+
 - Terraform CLI.
+
 - AWS CLI configured with appropriate credentials.
-- An S3 Bucket containing a wikijs.env file for application runtime configuration. [Instructions here](./docs/prerequisites.md)
+
+- S3 Bucket for Terraform backends and for application environmet file (wikijs.env). [Instructions here](./docs/prerequisites.md)
+
 - A Wiki.js Docker image pushed to an ECR repository. [Instructions here](./docs/prerequisites.md)
 
 ## Deployment instructions
@@ -123,13 +129,13 @@ Before deploying this infrastructure, ensure you have the following:
 
     [test.tfvars](./terraform/test.tfvars) (Low cost, lightweight POC)
 
-    [prod.tfvars](./terraform/prod.tfvars) (Balanced cost, HA, Anti-Accident DB Hardening)
+    [prod.tfvars](./terraform/prod.tfvars) (Balanced cost, HA, Anti-Accident DB hardening)
 
 2. Run `terraform init`
 
 3. Run `terraform validate`
 
-4. Run `terraform plan --var-file test.tfvars --out test` for test deployment
+4. Run `terraform plan --var-file test.tfvars --out test` (example for test deployment)
 
 5. Run `terraform apply test`
 

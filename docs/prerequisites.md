@@ -31,4 +31,10 @@
     ```bash
     aws s3 cp wikijs.env s3://wikijs-conf-${BUCKET_ID}/wikijs.env
     ```
+3. Enable versioning on the bucket for quick state file error recovery:
+    ```bash
+    aws s3api put-bucket-versioning --bucket wikijs-conf-${BUCKET_ID} \
+    --versioning-configuration Status=Enabled
+
+    ```
 
