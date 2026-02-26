@@ -407,39 +407,6 @@
     <div class="vpc">
       <span class="zone-label">AWS VPC — Custom</span>
 
-      <!-- ACM: regional, above everything -->
-      <div class="component" style="margin-bottom:10px; border-color: rgba(160,20,60,0.3); background: rgba(160,20,60,0.03);">
-        <div class="icon sm">🔏</div>
-        <div class="comp-info">
-          <div class="comp-name">ACM Certificate — Regional</div>
-          <div class="comp-desc">Self-signed · wikijs.internal · RSA 2048 · 10yr</div>
-        </div>
-        <span class="badge selfsigned">RSA</span>
-      </div>
-
-      <!-- PrivateLink panel: spans full width above AZ rows -->
-      <div class="privatelink-panel" style="margin-bottom:10px;">
-        <div class="privatelink-header">🔗 VPC PrivateLink — Managed Services (no NAT)</div>
-        <div class="services-grid">
-          <div class="svc-card">
-            <div class="icon ecr">📦</div>
-            <div><div class="svc-name">Amazon ECR</div><div class="svc-sub">Container images</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon s3">🪣</div>
-            <div><div class="svc-name">Amazon S3</div><div class="svc-sub">Config / assets</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon sm">🔐</div>
-            <div><div class="svc-name">Secrets Manager</div><div class="svc-sub">DB credentials</div></div>
-          </div>
-          <div class="svc-card">
-            <div class="icon cw">📊</div>
-            <div><div class="svc-name">CloudWatch</div><div class="svc-sub">Logs & metrics</div></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Tier column headers — outside AZ rows so they don't affect box sizing -->
       <div style="display:flex; align-items:stretch; gap:0; margin-bottom:6px; padding-left: 34px;">
         <div style="flex:1; text-align:center;">
@@ -588,7 +555,11 @@
             </div>
           </div>
 
-          <div class="h-connector" style="min-width:52px; visibility:hidden;"></div>
+          <div class="h-connector orange" style="align-self:center;">
+            <div class="h-arrow-row"><div class="h-shaft"></div><div class="h-head"></div></div>
+            <span class="h-label">port 5432</span>
+            <span class="h-label">→ primary</span>
+          </div>
 
           <div class="az-cell">
             <div class="az-box az-b rds-box" style="opacity:0.85;">
@@ -605,6 +576,56 @@
 
         </div>
       </div><!-- /AZ-B row -->
+
+      <!-- Column-aligned panels: ACM below Web, PrivateLink below App -->
+      <div style="display:flex; align-items:flex-start; gap:0; margin-top:8px; padding-left:34px;">
+
+        <!-- ACM below Web Tier -->
+        <div style="flex:1;">
+          <div class="component" style="border-color: rgba(160,20,60,0.3); background: rgba(160,20,60,0.03); margin-bottom:0;">
+            <div class="icon sm">🔏</div>
+            <div class="comp-info">
+              <div class="comp-name">ACM Certificate</div>
+              <div class="comp-desc">Self-signed · wikijs.internal · RSA 2048</div>
+            </div>
+            <span class="badge selfsigned">RSA</span>
+          </div>
+        </div>
+
+        <!-- spacer matching h-connector width -->
+        <div style="min-width:52px;"></div>
+
+        <!-- empty App Tier col -->
+        <div style="flex:1.4;"></div>
+
+        <!-- spacer matching h-connector width -->
+        <div style="min-width:52px;"></div>
+
+        <!-- PrivateLink below Data Tier -->
+        <div style="flex:1;">
+          <div class="privatelink-panel" style="margin-bottom:0;">
+            <div class="privatelink-header">🔗 VPC PrivateLink — Managed Services (no NAT)</div>
+            <div class="services-grid">
+              <div class="svc-card">
+                <div class="icon ecr">📦</div>
+                <div><div class="svc-name">Amazon ECR</div><div class="svc-sub">Container images</div></div>
+              </div>
+              <div class="svc-card">
+                <div class="icon s3">🪣</div>
+                <div><div class="svc-name">Amazon S3</div><div class="svc-sub">Config / assets</div></div>
+              </div>
+              <div class="svc-card">
+                <div class="icon sm">🔐</div>
+                <div><div class="svc-name">Secrets Manager</div><div class="svc-sub">DB credentials</div></div>
+              </div>
+              <div class="svc-card">
+                <div class="icon cw">📊</div>
+                <div><div class="svc-name">CloudWatch</div><div class="svc-sub">Logs & metrics</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div><!-- /vpc -->
 
