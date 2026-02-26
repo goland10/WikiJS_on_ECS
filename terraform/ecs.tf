@@ -106,9 +106,9 @@ resource "aws_ecs_service" "wikijs" {
     aws_lb_listener.https
   ]
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-service"
-  })
+  }
 }
 ############################
 # Autoscaling Target
