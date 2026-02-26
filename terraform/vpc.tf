@@ -3,7 +3,7 @@ module "vpc" {
   version = "6.6.0"
 
   name = "wikijs-vpc"
-  cidr = "10.0.0.0/16"
+  cidr = var.vpc_cidr
 
   azs = var.azs
   #[

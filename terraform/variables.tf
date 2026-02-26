@@ -1,12 +1,21 @@
 ########################################
 # Global Variables
 ########################################
+
+variable "env" {
+  type        = string
+  description = "Environment (e.g., test, prod)"
+}
 variable "region" {
   type        = string
   description = "Default AWS region for deployment (e.g., eu-west-1)."
   default     = "eu-west-1"
 }
 
+variable "vpc_cidr" {
+  type = string
+  default = "10.0.0.0/16"
+}
 variable "azs" {
   # The type is dynamic as it is passed from a module, but generally a list(string) is expected.
   description = "A list of availability zones to use for the VPC."
@@ -112,7 +121,7 @@ variable "db_instance_performance_insights_enabled" {
 variable "db_instance_performance_insights_retention_period" {
   type        = number
   description = "Number of days to retain performance insights data."
-  default     = 7
+  default     = 0
 }
 
 ########################################

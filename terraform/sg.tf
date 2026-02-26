@@ -12,15 +12,15 @@ resource "aws_security_group" "alb_sg" {
 
 }
 
-## Ingress (from Internet)
-#resource "aws_vpc_security_group_ingress_rule" "alb_http" {
-#  security_group_id = aws_security_group.alb_sg.id
-#  cidr_ipv4         = "0.0.0.0/0"
-#  ip_protocol       = "tcp"
-#  from_port         = 80
-#  to_port           = 80
-#  description       = "HTTP from Internet"
-#}
+# Ingress (Allow for the redirect to work)
+resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  security_group_id = aws_security_group.alb_sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  description       = "HTTP from Internet"
+}
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https" {
   security_group_id = aws_security_group.alb_sg.id

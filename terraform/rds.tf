@@ -2,9 +2,9 @@ resource "aws_db_subnet_group" "wiki" {
   name       = "wikijs-db-subnet-group"
   subnet_ids = module.vpc.private_subnets
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-db-subnet-group"
-  })
+  }
 }
 
 resource "aws_db_parameter_group" "wiki" {
@@ -16,15 +16,15 @@ resource "aws_db_parameter_group" "wiki" {
     value = "0"
   }
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-db-parameter-group"
-  })
+  }
 }
 ########################################
 # DB Instance
 ########################################
 resource "aws_db_instance" "wiki" {
-  identifier = "wikijs-db"
+  identifier = "${var.app_name}-${var.env}"
 
   engine         = "postgres"
   engine_version = "17.6"
@@ -34,7 +34,7 @@ resource "aws_db_instance" "wiki" {
   max_allocated_storage = 100
   storage_type          = "gp3"
 
-  db_name  = var.app_name #"wikijs"
+  db_name  = "wikijs"
   username = var.db_user
   #Manage the master password with Secrets Manager.
   manage_master_user_password = true
@@ -53,7 +53,7 @@ resource "aws_db_instance" "wiki" {
   backup_retention_period   = var.db_instance_backup_retention_period  #0
   delete_automated_backups  = var.db_instance_delete_automated_backups #true
   skip_final_snapshot       = var.db_instance_skip_final_snapshot      #true
-  final_snapshot_identifier = "${var.app_name}-final-snapshot-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  final_snapshot_identifier = "${var.app_name}-${var.env}-final-snapshot-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   deletion_protection       = var.db_instance_deletion_protection #false
 
   auto_minor_version_upgrade = true
@@ -64,7 +64,5 @@ resource "aws_db_instance" "wiki" {
   monitoring_interval                   = 60
   monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
 
-  tags = {
-    Name = "wikijs-db"
-  }
+  tags = { Name = "wikijs-db" }
 }
