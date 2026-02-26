@@ -4,6 +4,7 @@
     ```bash
     AccountID=xxxxxxxxxxxx
     region=eu-west-1
+
     aws ecr create-repository --repository-name wiki \
     --image-scanning-configuration scanOnPush=true \
     --encryption-configuration encryptionType=AES256
@@ -20,7 +21,7 @@
     ```bash
     docker push $AccountID.dkr.ecr.$region.amazonaws.com/wiki:2.5.312
     ```
-# Upload wikijs.env to S3
+# Upload wikijs.env to S3 and enable versioning
 
 1. Create bucket:
     ```bash

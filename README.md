@@ -89,7 +89,7 @@ This project demonstrates several high-level DevOps and security patterns:
 
 - High Availability: The RDS instance is configured for **Multi-AZ** deployment.
 
-- Standardized Tagging: A *common_tags* local block ensures all resources are consistently labeled for **cost tracking** and management.
+- Standardized Tagging: A *default_tags* block (provider level) ensures all resources are consistently labeled for **cost tracking** and management.
 
 - Environment Isolation: The configuration uses variables to separate "Test" from "Prod" environments.
 
