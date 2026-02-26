@@ -6,9 +6,9 @@ resource "aws_security_group" "alb_sg" {
   description = "Application Load Balancer"
   vpc_id      = module.vpc.vpc_id
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-alb-sg"
-  })
+  }
 
 }
 
@@ -49,9 +49,9 @@ resource "aws_security_group" "ecs_sg" {
   description = "ECS tasks"
   vpc_id      = module.vpc.vpc_id
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-ecs-sg"
-  })
+  }
 }
 
 # Ingress (from ALB)
@@ -107,9 +107,9 @@ resource "aws_security_group" "vpce" {
   description = "Allow ECS to access VPC interface endpoints"
   vpc_id      = module.vpc.vpc_id
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-vpce-sg"
-  })
+  }
 }
 
 # Ingress (from ecs)
@@ -130,9 +130,9 @@ resource "aws_security_group" "db_sg" {
   description = "Allow PostgreSQL access from ECS only"
   vpc_id      = module.vpc.vpc_id
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-db-sg"
-  })
+  }
 }
 
 # Ingress (from ECS)

@@ -9,9 +9,9 @@ resource "aws_vpc_endpoint" "ecr_api" {
   security_group_ids  = [aws_security_group.vpce.id]
   private_dns_enabled = true
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-ecr-api-endpoint"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
@@ -22,9 +22,9 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   security_group_ids  = [aws_security_group.vpce.id]
   private_dns_enabled = true
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-ecr-dkr-endpoint"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "logs" {
@@ -35,9 +35,9 @@ resource "aws_vpc_endpoint" "logs" {
   security_group_ids  = [aws_security_group.vpce.id]
   private_dns_enabled = true
 
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-logs-endpoint"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
@@ -60,7 +60,7 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = module.vpc.private_route_table_ids
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-s3-endpoint"
-  })
+  }
 }

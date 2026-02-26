@@ -9,10 +9,10 @@ locals {
   env_file = "${var.app_name}.env"
 }
 
-locals {
-  common_tags = {
-    Project     = "WikiJS"
-    Environment = "Assessment"
-    ManagedBy   = "Terraform"
-  }
-}
+#locals {
+#  common_tags = {
+#    Project     = "WikiJS"
+#    Environment = "Assessment"
+#    ManagedBy   = "Terraform"
+#  }
+#}

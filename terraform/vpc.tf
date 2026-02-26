@@ -64,7 +64,7 @@ module "vpc" {
   }
 
   # General VPC tags
-  tags = merge(local.common_tags, {
+  tags = {
     Name = "wikijs-vpc"
-  })
+  }
 }
