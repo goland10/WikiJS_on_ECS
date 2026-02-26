@@ -13,7 +13,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "WikiJS"
-      Environment = "Assessment"
+      Environment = var.env
       ManagedBy   = "Terraform"
     }
   }
