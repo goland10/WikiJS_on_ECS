@@ -38,7 +38,7 @@ resource "aws_ecs_task_definition" "wikijs" {
         {
           name  = "DB_USER"
           value = var.db_user
-        },        
+        },
         {
           name  = "HA_PROXY"
           value = "true" # Tells Wiki.js it's behind a load balancer

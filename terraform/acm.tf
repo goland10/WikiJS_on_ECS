@@ -1,3 +1,6 @@
+###########################
+# AWS Certificate Manager
+###########################
 # Generate Private Key for WikiJS
 resource "tls_private_key" "wikijs_lb_key" {
   algorithm = "RSA"

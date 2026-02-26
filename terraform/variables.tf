@@ -6,14 +6,23 @@ variable "env" {
   type        = string
   description = "Environment (e.g., test, prod)"
 }
+
 variable "region" {
   type        = string
   description = "Default AWS region for deployment (e.g., eu-west-1)."
   default     = "eu-west-1"
 }
 
+variable "bucket" {
+  type        = string
+  description = "Bucket to store app env file and Terraform state file"
+}
+########################################
+# Network
+########################################
+
 variable "vpc_cidr" {
-  type = string
+  type    = string
   default = "10.0.0.0/16"
 }
 variable "azs" {
@@ -70,6 +79,12 @@ variable "app_name" {
 ########################################
 # Database Variables
 ########################################
+variable "db_instance_class" {
+  type        = string
+  description = "Database instance class."
+  default     = "db.t4g.micro"
+}
+
 variable "db_user" {
   type        = string
   description = "Database admin username."

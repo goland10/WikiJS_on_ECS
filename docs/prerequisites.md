@@ -24,10 +24,11 @@
 
 1. Create bucket:
     ```bash
-    aws s3 mb s3://wikijs-conf --region $region
+    BUCKET_ID=$RANDOM
+    aws s3 mb s3://wikijs-conf-${BUCKET_ID} --region $region
     ```
 2. Upload file to bucket:
     ```bash
-    aws s3 cp wikijs.env s3://wikijs-conf/wikijs.env
+    aws s3 cp wikijs.env s3://wikijs-conf-${BUCKET_ID}/wikijs.env
     ```
 

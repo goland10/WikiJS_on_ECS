@@ -5,7 +5,7 @@ locals {
 }
 
 locals {
-  bucket = "${var.app_name}-conf"
+  bucket   = var.bucket
   env_file = "${var.app_name}.env"
 }
 
