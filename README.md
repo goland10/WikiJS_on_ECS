@@ -62,23 +62,38 @@ This repository contains a production-ready Terraform configuration to deploy Wi
 The project automates the deployment of a containerized Wiki.js application. 
 
 Key components include:
+
 * Networking: A custom VPC with public and private subnets across multiple Availability Zones.
+
 * Compute: Amazon ECS using the Fargate (serverless) launch type for the application tier.
+
 * Database: A Managed Amazon RDS instance running PostgreSQL 17.
+
 * Traffic Management: An Application Load Balancer (ALB) to distribute traffic and handle health checks.
+
 * Security: Private-link VPC Endpoints to ensure application traffic to  AWS services (ECR, S3, Secrets Manager) stays within the AWS network.
+
 * Scalability: Target Tracking Autoscaling policies based on CPU utilization.
 
 ## Best Practices
 
 This project demonstrates several high-level DevOps and security patterns:
 
+- Serverless Execution (Fargate): Leverages AWS Fargate to **remove the operational overhead** of managing EC2 instances.
+
 - Zero-Trust Networking: All application components (ECS) and data components (RDS) are located in **private subnets with no direct internet access**.
+
 - Security Groups - **Principle of Least Privilege**: Granular ingress/egress rules ensure, for example, that the database only accepts traffic from the ECS tasks on port 5432.
+
 - Secret Management: **Database credentials are not hardcoded**. They are managed by AWS Secrets Manager and injected into the container at runtime via ECS secrets.
+
 - High Availability: The RDS instance is configured for **Multi-AZ** deployment.
+
 - Standardized Tagging: A *common_tags* local block ensures all resources are consistently labeled for **cost tracking** and management.
-- Environment Isolation: The configuration uses variables and local values to separate "Test" from "Prod" environments.
+
+- Environment Isolation: The configuration uses variables to separate "Test" from "Prod" environments.
+
+- Remote State Management: **Utilizes an S3 Backend for Terraform state**, which is critical for team collaboration and preventing state corruption.
 
 ## Architecture
 [Diagram here](https://htmlpreview.github.io/?https://raw.githubusercontent.com/goland10/WikiJS_on_ECS/refs/heads/main/docs/architecture.html) 
@@ -108,7 +123,7 @@ Before deploying this infrastructure, ensure you have the following:
 
     [test.tfvars](./terraform/test.tfvars) (Low cost, lightweight POC)
 
-    [prod.tfvars](./terraform/prod.tfvars) (High cost, HA, Anti-Accident Hardening)
+    [prod.tfvars](./terraform/prod.tfvars) (Balanced cost, HA, Anti-Accident DB Hardening)
 
 2. Run `terraform init`
 
