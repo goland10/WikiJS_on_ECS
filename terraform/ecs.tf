@@ -40,10 +40,6 @@ resource "aws_ecs_task_definition" "wikijs" {
           value = var.db_user
         },
         {
-          name  = "HA_PROXY"
-          value = "true" # Tells Wiki.js it's behind a load balancer
-        },
-        {
           name  = "WIKI_URL"
           value = "https://${aws_lb.wikijs.dns_name}" # Vital for proper link generation
         }
