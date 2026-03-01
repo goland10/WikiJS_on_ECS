@@ -139,4 +139,13 @@ Before deploying this infrastructure, ensure you have the following:
 
 5. Run `terraform apply test`
 
-6. To destroy run `terraform destroy -var-file test.tfvars -auto-approve`
+6. Output:
+
+    ![output screenshot](./docs/outputs.png)
+
+7. Browse to the ALB link (first line of the Outputs).
+    You should get see this page:
+
+    ![Landing page](./docs/landing_page.png)
+    
+8. To destroy run `terraform destroy -var-file test.tfvars -auto-approve`
