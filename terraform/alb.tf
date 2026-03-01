@@ -39,7 +39,7 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.wikijs.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08" # Recommended default
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09" # Recommended default
   certificate_arn   = aws_acm_certificate.wikijs_alb_cert.arn
 
   default_action {

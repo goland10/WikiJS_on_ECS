@@ -15,7 +15,7 @@ resource "aws_ecs_task_definition" "wikijs" {
       name       = "wikijs"
       image      = "${local.account_id}.dkr.ecr.${var.region}.amazonaws.com/wiki:2.5.312"
       essential  = true
-      entryPoint = ["sh", "-c", "printenv && node server"]
+      #entryPoint = ["sh", "-c", "printenv && node server"]
       secrets = [
         {
           name = "DB_PASS"
