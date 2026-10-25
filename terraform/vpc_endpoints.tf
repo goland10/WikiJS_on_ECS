@@ -54,7 +54,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 #########################
 # Gateway VPC Endpoint
 #########################
-
+# Gateway Endpoint for S3 (Free, required for image layers)
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = module.vpc.vpc_id
   service_name      = "com.amazonaws.${var.region}.s3"

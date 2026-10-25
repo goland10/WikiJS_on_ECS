@@ -28,14 +28,14 @@
     BUCKET_ID=$RANDOM
     aws s3 mb s3://wikijs-conf-${BUCKET_ID} --region $region
     ```
-2. Upload file to bucket:
-    ```bash
-    aws s3 cp wikijs.env s3://wikijs-conf-${BUCKET_ID}/wikijs.env
-    ```
-3. Enable versioning on the bucket for quick state file error recovery:
+
+2. Enable versioning on the bucket for quick state file error recovery:
     ```bash
     aws s3api put-bucket-versioning --bucket wikijs-conf-${BUCKET_ID} \
     --versioning-configuration Status=Enabled
 
     ```
-
+3. Upload file to bucket:
+    ```bash
+    aws s3 cp wikijs.env s3://wikijs-conf-${BUCKET_ID}/wikijs.env
+    ```
