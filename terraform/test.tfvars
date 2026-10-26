@@ -1,7 +1,7 @@
 # Global
 env    = "test"
 region = "eu-west-1"
-bucket = "wikijs-conf"
+bucket = "wikijs-on-ecs-goland10"
 
 #Network
 vpc_cidr        = "10.0.0.0/16"
