@@ -149,3 +149,5 @@ Before deploying this infrastructure, ensure you have the following:
     ![Landing page](./docs/landing_page.png)
     
 8. To destroy run `terraform destroy -var-file test.tfvars -auto-approve`
+
+9. [Delete Prerequisites](./docs/prerequisites.md#delete-prerequisites)

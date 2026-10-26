@@ -39,3 +39,34 @@
     ```bash
     aws s3 cp wikijs.env s3://${BUCKET_NAME}/wikijs.env
     ```
+# Delete Prerequisites
+
+1. Delete ECR repo
+    ```bash
+    REGION=eu-west-1
+    
+    aws ecr delete-repository \
+    --repository-name wiki \
+    --region $REGION \
+    --force
+    ```
+2. Delete bucket
+    ```bash
+    BUCKET_NAME=wikijs-on-ecs-goland10
+    
+    aws s3api delete-objects \
+    --bucket $BUCKET_NAME \
+    --delete "$(aws s3api list-object-versions \
+        --bucket  $BUCKET_NAME \
+        --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
+        --output json)"
+
+    aws s3api delete-objects \
+    --bucket $BUCKET_NAME \
+    --delete "$(aws s3api list-object-versions \
+        --bucket $BUCKET_NAME \
+        --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' \
+        --output json)"
+
+    aws s3 rb s3://$BUCKET_NAME --region $REGION
+    ```
